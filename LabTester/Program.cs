@@ -7,7 +7,7 @@ namespace LabTester
 {
     internal class Program
     {
-        private static readonly string[] ArgsTypes = {"-n", "-args"};
+        private static readonly string[] ArgsTypes = { "-n", "-args" };
 
         private static void Main(string[] args)
         {
@@ -45,7 +45,7 @@ namespace LabTester
             }
 
             // find index
-            string argsString = GetArgsIndex(out int numberIndex, out int argsIndex);
+            string argsString = GetArgsIndex(args, out int numberIndex, out int argsIndex);
 
             if (HasEachArgsType(argsIndex, numberIndex))
             {
@@ -55,6 +55,7 @@ namespace LabTester
 
             // process string
             List<string> resultStrings = ProcessString(numberIndex, argsIndex, argsString);
+            // process args
             ConvertArgsToList(out processes, out tasksArgs, resultStrings);
             return true;
         }
@@ -92,11 +93,11 @@ namespace LabTester
             return resultList;
         }
 
-        private static string GetArgsIndex(out int numberIndex, out int argsIndex)
+        private static string GetArgsIndex(string[] args, out int numberIndex, out int argsIndex)
         {
-            string argsString = string.Join(" ", ArgsTypes);
-            numberIndex = argsString.IndexOf(argsString[0], StringComparison.Ordinal);
-            argsIndex = argsString.IndexOf(argsString[1], StringComparison.Ordinal);
+            string argsString = string.Join(" ", args);
+            numberIndex = argsString.IndexOf(ArgsTypes[0], StringComparison.Ordinal);
+            argsIndex = argsString.IndexOf(ArgsTypes[1], StringComparison.Ordinal);
             return argsString;
         }
 
