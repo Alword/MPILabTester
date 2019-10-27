@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 
 namespace LabTester
 {
@@ -102,12 +103,12 @@ namespace LabTester
 
             foreach (int process in processesList)
             {
-                Console.Write($"{process,10:D}");
+                Console.Write($"{process,15:D}");
                 foreach (string testArgs in testsArgs)
                 {
                     var testKey = new TestKey(process, testArgs);
                     double result = callBack.Invoke(testKey);
-                    Console.Write($"{result,10:F4}");
+                    Console.Write($"{result,15:F4}");
                 }
 
                 Console.WriteLine();
@@ -116,9 +117,16 @@ namespace LabTester
 
         private static void WriteHeader(List<string> testsArgs)
         {
-            var header = @"proc\size";
-            Console.Write($"{header,10}");
-            foreach (string testArgs in testsArgs) Console.Write($"[{testArgs,10}]");
+            var header = @"proc \ value";  
+            
+            Console.Write($"{header,15}");
+
+            testsArgs = testsArgs.Select(t => t.TrimStart()).ToList();
+            foreach (string testArgs in testsArgs)
+            {
+                header = $"{testArgs}";
+                Console.Write($"{header,15}");
+            }
             Console.WriteLine();
         }
 

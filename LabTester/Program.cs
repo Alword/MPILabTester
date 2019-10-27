@@ -78,13 +78,13 @@ namespace LabTester
 
             if (numberIndex < argsIndex)
             {
-                processString = argsString.Substring(numberIndex, argsIndex - numberIndex).Substring(3);
-                matrixString = argsString.Substring(argsIndex).Substring(3);
+                processString = argsString.Substring(numberIndex, argsIndex - numberIndex).Substring(ArgsTypes[0].Length);
+                matrixString = argsString.Substring(argsIndex).Substring(ArgsTypes[1].Length);
             }
             else
             {
-                processString = argsString.Substring(numberIndex).Substring(3);
-                matrixString = argsString.Substring(argsIndex, numberIndex - argsIndex).Substring(3);
+                processString = argsString.Substring(numberIndex).Substring(ArgsTypes[0].Length);
+                matrixString = argsString.Substring(argsIndex, numberIndex - argsIndex).Substring(ArgsTypes[1].Length);
             }
 
             resultList.Add(processString);
