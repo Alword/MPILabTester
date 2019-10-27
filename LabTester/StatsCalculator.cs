@@ -2,26 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 
 namespace LabTester
 {
-    public struct TestKey
-    {
-        public int ProcessCount;
-        public string TaskArgs;
-
-        public TestKey(int processCount, string taskArgs)
-        {
-            this.ProcessCount = processCount;
-            this.TaskArgs = taskArgs;
-        }
-    }
-
     public class StatsCalculator
     {
         private readonly List<int> processesList;
         private readonly List<string> testsArgs;
+
         public StatsCalculator(List<int> processesList, List<string> testsArgs)
         {
             this.processesList = processesList;
@@ -32,16 +20,16 @@ namespace LabTester
         {
             Console.WriteLine("Время");
 
-            Dictionary<TestKey, double> times = new Dictionary<TestKey, double>();
+            var times = new Dictionary<TestKey, double>();
 
-            WriteDictionary((t) => CalculateTimesFunction(t, times));
+            WriteDictionary(t => CalculateTimesFunction(t, times));
 
             return times;
         }
 
         private double CalculateTimesFunction(TestKey testParamsKey, Dictionary<TestKey, double> timesDictionary)
         {
-            double value = Stats.RunTest(testParamsKey.ProcessCount, testParamsKey.TaskArgs);
+            double value = RunTest(testParamsKey.ProcessCount, testParamsKey.TaskArgs);
             timesDictionary.Add(testParamsKey, value);
             return value;
         }
@@ -50,9 +38,9 @@ namespace LabTester
         {
             Console.WriteLine("Эффективность");
 
-            Dictionary<TestKey, double> efficiency = new Dictionary<TestKey, double>();
+            var efficiency = new Dictionary<TestKey, double>();
 
-            WriteDictionary((t) => CalculateEfficiencyFunction(t, acceleration, efficiency));
+            WriteDictionary(t => CalculateEfficiencyFunction(t, acceleration, efficiency));
 
             return efficiency;
         }
@@ -70,9 +58,9 @@ namespace LabTester
         {
             Console.WriteLine("Ускорение");
 
-            Dictionary<TestKey, double> acceleration = new Dictionary<TestKey, double>();
+            var acceleration = new Dictionary<TestKey, double>();
 
-            WriteDictionary((t) => CalculateAccelerationFunction(t, times, acceleration));
+            WriteDictionary(t => CalculateAccelerationFunction(t, times, acceleration));
 
             return acceleration;
         }
@@ -92,9 +80,9 @@ namespace LabTester
         {
             Console.WriteLine("Стоимость");
 
-            Dictionary<TestKey, double> cost = new Dictionary<TestKey, double>();
+            var cost = new Dictionary<TestKey, double>();
 
-            WriteDictionary((t) => CalculateCostFunction(t, times, cost));
+            WriteDictionary(t => CalculateCostFunction(t, times, cost));
 
             return cost;
         }
@@ -103,7 +91,7 @@ namespace LabTester
             Dictionary<TestKey, double> times,
             Dictionary<TestKey, double> cost)
         {
-            var value = times[testKey] * testKey.ProcessCount;
+            double value = times[testKey] * testKey.ProcessCount;
             cost.Add(testKey, value);
             return value;
         }
@@ -121,20 +109,54 @@ namespace LabTester
                     double result = callBack.Invoke(testKey);
                     Console.Write($"{result,10:F4}");
                 }
+
                 Console.WriteLine();
             }
         }
 
-        private static void WriteHeader(List<string> mpiArgs)
+        private static void WriteHeader(List<string> testsArgs)
         {
-            string header = @"proc\size";
+            var header = @"proc\size";
             Console.Write($"{header,10}");
-            foreach (var matrix in mpiArgs)
-            {
-                Console.Write($"[{matrix,10:D}]");
-            }
+            foreach (string testArgs in testsArgs) Console.Write($"[{testArgs,10}]");
             Console.WriteLine();
         }
 
+        private static double RunTest(int process, string testArgs)
+        {
+            var proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/C mpiexec -n {process} mpi.exe {testArgs}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    WorkingDirectory = Environment.CurrentDirectory,
+                    CreateNoWindow = true
+                }
+            };
+
+            proc.Start();
+            double value = -1.0;
+            while (!proc.StandardOutput.EndOfStream)
+            {
+                string line = proc.StandardOutput.ReadLine();
+                if (line == null) return -1;
+
+                try
+                {
+                    value = double.Parse(line, CultureInfo.InvariantCulture);
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
+
+                return value;
+            }
+
+            return value;
+        }
     }
 }

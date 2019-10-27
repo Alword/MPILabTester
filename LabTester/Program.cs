@@ -1,29 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Threading;
 
 namespace LabTester
 {
-    class Program
+    internal class Program
     {
-        private static readonly string[] ArgsTypes = new string[] { "-n", "-args" };
-        static void Main(string[] args)
+        private static readonly string[] ArgsTypes = {"-n", "-args"};
+
+        private static void Main(string[] args)
         {
             if (!TryReadArgs(args, out List<int> processes, out List<string> tasksArgs)) return;
 
 
-            Stopwatch stopwatch = new Stopwatch();
+            var stopwatch = new Stopwatch();
             stopwatch.Start();
-            StatsCalculator statsCalculator = new StatsCalculator(processes, tasksArgs);
+            var statsCalculator = new StatsCalculator(processes, tasksArgs);
 
-            var times = statsCalculator.CalculateTimes();
+            Dictionary<TestKey, double> times = statsCalculator.CalculateTimes();
 
-            var acceleration = statsCalculator.CalculateAcceleration(times);
+            Dictionary<TestKey, double> acceleration = statsCalculator.CalculateAcceleration(times);
 
             statsCalculator.CalculateCost(times);
 
@@ -55,14 +52,16 @@ namespace LabTester
                 WriteInstruction();
                 return false;
             }
+
             // process string
-            var resultStrings = ProcessString(numberIndex, argsIndex, argsString);
+            List<string> resultStrings = ProcessString(numberIndex, argsIndex, argsString);
             ConvertArgsToList(out processes, out tasksArgs, resultStrings);
             return true;
         }
 
-        private static void ConvertArgsToList(out List<int> processes, out List<string> tasksArgs, IReadOnlyList<string> resultStrings)
-        { 
+        private static void ConvertArgsToList(out List<int> processes, out List<string> tasksArgs,
+            IReadOnlyList<string> resultStrings)
+        {
             IEnumerable<string> processesEnum = resultStrings[0].Split(" ").Where(s => s.Length > 0);
             IEnumerable<string> matrixSizeEnum = resultStrings[1].Split(";").Where(s => s.Length > 0);
 
@@ -73,8 +72,9 @@ namespace LabTester
         private static List<string> ProcessString(int numberIndex, int argsIndex, string argsString)
         {
             var resultList = new List<string>(2);
-            string processString = null;
-            string matrixString = null;
+            string processString;
+            string matrixString;
+
             if (numberIndex < argsIndex)
             {
                 processString = argsString.Substring(numberIndex, argsIndex - numberIndex).Substring(3);
@@ -85,6 +85,7 @@ namespace LabTester
                 processString = argsString.Substring(numberIndex).Substring(3);
                 matrixString = argsString.Substring(argsIndex, numberIndex - argsIndex).Substring(3);
             }
+
             resultList.Add(processString);
             resultList.Add(matrixString);
 
