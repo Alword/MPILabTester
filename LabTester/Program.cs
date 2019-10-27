@@ -11,194 +11,112 @@ namespace LabTester
 {
     class Program
     {
+        private static readonly string[] ArgsTypes = new string[] { "-n", "-args" };
         static void Main(string[] args)
         {
-            if (args == null || args.Length == 0)
-            {
-                Console.WriteLine("Enter args -p and -s");
-                Console.WriteLine("Example:");
-                Console.WriteLine("-p 1 4 9 16 25 -m 420 1260 2100");
-                Console.ReadLine();
-                return;
-            }
+            if (!TryReadArgs(args, out List<int> processes, out List<string> tasksArgs)) return;
 
-            string argsString = string.Join(" ", args);
-            int indexOfp = argsString.IndexOf("-p", StringComparison.Ordinal);
-            int indexOfm = argsString.IndexOf("-s", StringComparison.Ordinal);
-
-            if (indexOfm < 0 || indexOfp < 0)
-            {
-                Console.WriteLine("Enter args -p and -s");
-                Console.WriteLine("Example:");
-                Console.WriteLine("-p 1 4 9 16 25 -m 420 1260 2100");
-                Console.ReadLine();
-                return;
-            }
-
-            string processString = string.Empty;
-            string matrixString = string.Empty;
-
-            if (indexOfp < indexOfm)
-            {
-                processString = argsString.Substring(indexOfp, indexOfm - indexOfp).Substring(3);
-                matrixString = argsString.Substring(indexOfm).Substring(3);
-            }
-            else
-            {
-                processString = argsString.Substring(indexOfp).Substring(3);
-                matrixString = argsString.Substring(indexOfm, indexOfp - indexOfm).Substring(3);
-            }
-
-            var processesEnum = processString.Split(" ").Where(s => s.Length > 0);
-            var matrixSizeEnum = matrixString.Split(" ").Where(s => s.Length > 0);
-
-            var processes = processesEnum.Select(int.Parse).ToList(); //{ 1, 4, 9, 16, 25, 36, 49 };
-            var matrixSize = matrixSizeEnum.Select(int.Parse).ToList();
 
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
+            StatsCalculator statsCalculator = new StatsCalculator(processes, tasksArgs);
 
-            var times = CalculateTimes(processes, matrixSize);
+            var times = statsCalculator.CalculateTimes();
 
-            var speedDictionary = CalculateSpeedUP(processes, matrixSize, times);
+            var acceleration = statsCalculator.CalculateAcceleration(times);
 
-            var costDictionary = CalculateCost(processes, matrixSize, times);
+            statsCalculator.CalculateCost(times);
 
-            var efficiency = CalculateEfficiency(processes, matrixSize, speedDictionary);
+            statsCalculator.CalculateEffisiency(acceleration);
 
+            stopwatch.Stop();
             Console.WriteLine($"Total time: {stopwatch.Elapsed.Seconds} seconds");
 
             Console.ReadLine();
         }
 
-        private static Dictionary<(int, int), double> CalculateEfficiency(List<int> processes, List<int> matrixSize, Dictionary<(int, int), double> speedDictionary)
+        private static bool TryReadArgs(string[] args, out List<int> processes, out List<string> tasksArgs)
         {
-            var efficiency = new Dictionary<(int, int), double>();
-            Console.WriteLine("Эффективность");
-            //int processesKey = processes[0];
-            WriteDictionary(processes, matrixSize,
-                (matrix, process) =>
-                {
-                    var currentKey = (matrix, process);
-                    var value = speedDictionary[currentKey] / process;
-                    efficiency.Add(currentKey, value);
-                    return value;
-                });
-            return efficiency;
-        }
+            processes = null;
+            tasksArgs = null;
 
-        private static Dictionary<(int, int), double> CalculateCost(List<int> processes, List<int> matrixSize, Dictionary<(int, int), double> times)
-        {
-            Console.WriteLine("Стоимость");
-            var costDictionary = new Dictionary<(int, int), double>();
-            //int processesKey = processes[0];
-            WriteDictionary(processes, matrixSize,
-                (matrix, process) =>
-                {
-                    var currentKey = (matrix, process);
-                    var value = times[currentKey] * process;
-                    costDictionary.Add(currentKey, value);
-                    return value;
-                });
-            return costDictionary;
-        }
-
-        private static Dictionary<(int, int), double> CalculateSpeedUP(List<int> processes, List<int> matrixSize, Dictionary<(int, int), double> times)
-        {
-            Console.WriteLine("Ускорение");
-            var speedDictionary = new Dictionary<(int, int), double>();
-            int processesKey = processes[0];
-            WriteDictionary(processes, matrixSize,
-                (matrix, process) =>
-                {
-                    var delKey = (matrix, processesKey);
-                    var currentKey = (matrix, process);
-                    var value = times[delKey] / times[currentKey];
-                    speedDictionary.Add(currentKey, value);
-                    return value;
-                });
-            return speedDictionary;
-        }
-
-        private static Dictionary<(int, int), double> CalculateTimes(List<int> processes, List<int> matrixSize)
-        {
-            var times = new Dictionary<(int, int), double>();
-            Console.WriteLine("Время");
-            WriteDictionary(processes, matrixSize,
-                (matrix, process) =>
-                {
-                    var key = (matrix, process);
-                    var value = RunTest(process, matrix);
-                    times.Add(key, value);
-                    return value;
-                });
-            return times;
-        }
-
-        private static void WriteDictionary(List<int> processes, List<int> matrixSize, Func<int, int, double> callBack)
-        {
-            WriteHeader(matrixSize);
-
-            foreach (var process in processes)
+            // check args
+            if (IsArgsValid(args))
             {
-                Console.Write($"{process,10:D}");
-                foreach (var matrix in matrixSize)
-                {
-                    double result = callBack.Invoke(matrix, process);
-                    Console.Write($"{result,10:F4}");
-                }
-                Console.WriteLine();
-            }
-        }
-
-        private static void WriteHeader(List<int> matrixSize)
-        {
-            string header = @"proc\size";
-            Console.Write($"{header,10}");
-            foreach (var matrix in matrixSize)
-            {
-                Console.Write($"{matrix,10:D}");
-            }
-            Console.WriteLine();
-        }
-
-        private static double RunTest(int process, int matrixSize)
-        {
-            if (process > 256 && matrixSize > 1024) return -1;
-            var proc = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/C mpiexec -n {process} mpi.exe {matrixSize}",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    WorkingDirectory = Environment.CurrentDirectory,
-                    CreateNoWindow = true
-                }
-            };
-
-            proc.Start();
-            double value = -1.0;
-            while (!proc.StandardOutput.EndOfStream)
-            {
-                string line = proc.StandardOutput.ReadLine();
-                if (line == null) return -1;
-
-                
-                try
-                {
-                    value = double.Parse(line, CultureInfo.InvariantCulture);
-                }
-                catch (Exception e)
-                {
-                    // ignored
-                }
-
-                return value;
+                WriteInstruction();
+                return false;
             }
 
-            return value;
+            // find index
+            string argsString = GetArgsIndex(out int numberIndex, out int argsIndex);
+
+            if (HasEachArgsType(argsIndex, numberIndex))
+            {
+                WriteInstruction();
+                return false;
+            }
+            // process string
+            var resultStrings = ProcessString(numberIndex, argsIndex, argsString);
+            ConvertArgsToList(out processes, out tasksArgs, resultStrings);
+            return true;
+        }
+
+        private static void ConvertArgsToList(out List<int> processes, out List<string> tasksArgs, IReadOnlyList<string> resultStrings)
+        { 
+            IEnumerable<string> processesEnum = resultStrings[0].Split(" ").Where(s => s.Length > 0);
+            IEnumerable<string> matrixSizeEnum = resultStrings[1].Split(";").Where(s => s.Length > 0);
+
+            processes = processesEnum.Select(int.Parse).ToList();
+            tasksArgs = matrixSizeEnum.Select(s => s.ToString()).ToList();
+        }
+
+        private static List<string> ProcessString(int numberIndex, int argsIndex, string argsString)
+        {
+            var resultList = new List<string>(2);
+            string processString = null;
+            string matrixString = null;
+            if (numberIndex < argsIndex)
+            {
+                processString = argsString.Substring(numberIndex, argsIndex - numberIndex).Substring(3);
+                matrixString = argsString.Substring(argsIndex).Substring(3);
+            }
+            else
+            {
+                processString = argsString.Substring(numberIndex).Substring(3);
+                matrixString = argsString.Substring(argsIndex, numberIndex - argsIndex).Substring(3);
+            }
+            resultList.Add(processString);
+            resultList.Add(matrixString);
+
+            return resultList;
+        }
+
+        private static string GetArgsIndex(out int numberIndex, out int argsIndex)
+        {
+            string argsString = string.Join(" ", ArgsTypes);
+            numberIndex = argsString.IndexOf(argsString[0], StringComparison.Ordinal);
+            argsIndex = argsString.IndexOf(argsString[1], StringComparison.Ordinal);
+            return argsString;
+        }
+
+        private static bool HasEachArgsType(int indexOfm, int indexOfp)
+        {
+            return indexOfm < 0 || indexOfp < 0;
+        }
+
+        private static bool IsArgsValid(IReadOnlyCollection<string> args)
+        {
+            return args == null || args.Count == 0;
+        }
+
+        private static void WriteInstruction()
+        {
+            Console.WriteLine("Enter args -n and -args");
+            Console.WriteLine("Example:");
+            Console.WriteLine("-p 1 4 9 16 25 -args 1 2 3; 4 5 6;");
+            Console.WriteLine("-p 1 2 3 -args 4; 5; 6;");
+            // TO-DO Explain whats mpi.exe will got
+            Console.ReadLine();
         }
     }
 }
