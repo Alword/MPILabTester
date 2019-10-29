@@ -2,7 +2,7 @@
   "profiles": {
     "LabTester": {
       "commandName": "Project",
-      "commandLineArgs": "-n 1 4 9 16 25 36 -args420;1260;2100;"
+      "commandLineArgs": "-n 1 4 9 16 25 36 -args 420;1260;2100"
     }
   }
 }

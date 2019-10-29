@@ -27,7 +27,7 @@ namespace LabTester
             statsCalculator.CalculateEffisiency(acceleration);
 
             stopwatch.Stop();
-            Console.WriteLine($"Total time: {stopwatch.Elapsed.Seconds} seconds");
+            Console.WriteLine($"Total time: {stopwatch.Elapsed}");
 
             Console.ReadLine();
         }
@@ -38,14 +38,19 @@ namespace LabTester
             tasksArgs = null;
 
             // check args
-            if (IsArgsValid(args))
-            {
-                WriteInstruction();
-                return false;
+
+            if (IsInvalidArgs(args))
+            { 
+                args = WriteInstruction().Split(" ");
+
+                if (IsInvalidArgs(args))
+                    return false;
             }
+
 
             // find index
             string argsString = GetArgsIndex(args, out int numberIndex, out int argsIndex);
+
 
             if (HasEachArgsType(argsIndex, numberIndex))
             {
@@ -106,19 +111,36 @@ namespace LabTester
             return indexOfm < 0 || indexOfp < 0;
         }
 
-        private static bool IsArgsValid(IReadOnlyCollection<string> args)
+        private static bool IsInvalidArgs(IReadOnlyCollection<string> args)
         {
             return args == null || args.Count == 0;
         }
 
-        private static void WriteInstruction()
+        private static string WriteInstruction()
         {
             Console.WriteLine("Enter args -n and -args");
-            Console.WriteLine("Example:");
-            Console.WriteLine("-p 1 4 9 16 25 -args 1 2 3; 4 5 6;");
-            Console.WriteLine("-p 1 2 3 -args 4; 5; 6;");
-            // TO-DO Explain whats mpi.exe will got
-            Console.ReadLine();
+            Console.WriteLine("Rename your test program file to mpi.exe");
+            Console.WriteLine("Directory must contain this mpi.exe!\n");
+            Console.WriteLine("Example 1: (single arg per task)\n");
+            Console.WriteLine("-n 1 2 3 -args 4; 5; 6;\n");
+            Console.WriteLine("Example 2 (three args per task)\n");
+            Console.WriteLine("-n 1 4 9 16 25 -args 1 2 3; 4 5 6;\n");
+            Console.WriteLine("MPI accept args Example");
+            Console.WriteLine();
+            Console.WriteLine("#include <iostream>");
+            Console.WriteLine("#include<stdlib.h>");
+            Console.WriteLine("int main(int argc, char* argv[]) {");
+            Console.WriteLine("   int arg1;");
+            Console.WriteLine("   sscanf_s(argv[1],\"%d\",&arg1);");
+            Console.WriteLine("   std::cout << myArg1;");
+            Console.WriteLine("   return 0;");
+            Console.WriteLine("}");
+            Console.WriteLine();
+            Console.WriteLine("This example should write value of myArg1 (N per -n times)");
+            Console.WriteLine();
+            // TO-DO string builder
+            Console.Write("Enter params line:");
+            return Console.ReadLine();
         }
     }
 }
